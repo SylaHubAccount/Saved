@@ -38,18 +38,32 @@ local Config = {
     AutoExecute = false
 }
 
-local function ServerHop(reason)
-    LP:Kick("\n" .. (reason or "Serverhopping..."))
-    task.wait(0.5)
-    TeleportService:Teleport(game.PlaceId, LP)
+local function SmartHop(avoidCurrentServer)
+    if avoidCurrentServer then
+        -- Find a new server (Server Hop)
+        local HttpService = game:GetService("HttpService")
+        local Servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+        for _, s in pairs(Servers.data) do
+            if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, LP)
+                break
+            end
+        end
+    else
+        -- Rejoin the same server
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP)
+    end
 end
 
+-- Moderator Detection (Avoids server)
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(0.5) do
         for _, player in pairs(Players:GetPlayers()) do
             if player ~= LP and player.Character then
                 if player.Character:FindFirstChild("_K_Title", true) then
-                    ServerHop("Serverhopping cause there's a moderator...")
+                    LP:Kick("\nModerator Detected! Finding new server...")
+                    task.wait(0.1)
+                    SmartHop(true)
                     break
                 end
             end
@@ -57,6 +71,7 @@ task.spawn(function()
     end
 end)
 
+-- Auto Execute Logic
 task.spawn(function()
     while task.wait(0.5) do
         if Config.AutoExecute then
@@ -70,10 +85,11 @@ task.spawn(function()
     end
 end)
 
+-- Optimized Fast Farm
 task.spawn(function()
     while task.wait() do
         if Config.AutoFarm then
-            local stats = LP:WaitForChild("leaderstats", 5)
+            local stats = LP:FindFirstChild("leaderstats") or LP:WaitForChild("leaderstats", 2)
             local coinValue = stats and stats:FindFirstChild("VerifiedCoins")
             
             local ignored = workspace:FindFirstChild("Ignored")
@@ -96,12 +112,14 @@ task.spawn(function()
                                 LP.Character.HumanoidRootPart.CFrame = coinPart.CFrame
                             end
                             
-                            task.wait(1.5)
+                            -- Faster check: Wait just enough for the server to register touch
+                            task.wait(0.4) 
                             
                             local newCoins = coinValue and coinValue.Value or 0
                             
                             if newCoins <= oldCoins and Config.AutoExecute then
-                                ServerHop("No more coins found, rejoining...")
+                                -- No more coins to grab in this server, rejoin same server to reset them
+                                SmartHop(false)
                                 return
                             end
                         end
@@ -114,11 +132,11 @@ task.spawn(function()
                         if door1 and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
                             LP.Character.HumanoidRootPart.CFrame = door1.CFrame
                         end
-                        task.wait(1)
+                        task.wait(0.2)
                         if door2 and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
                             LP.Character.HumanoidRootPart.CFrame = door2.CFrame
                         end
-                        task.wait(1)
+                        task.wait(0.2)
                     end
                 end
             end
@@ -136,7 +154,7 @@ local ToggleFarm = Tab:CreateToggle({
 })
 
 local ToggleExec = SettingsTab:CreateToggle({
-   Name = "Auto Execute & Rejoin",
+   Name = "Auto Execute & Smart Rejoin",
    CurrentValue = false,
    Flag = "AutoExecToggle",
    Callback = function(Value)
