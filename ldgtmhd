@@ -30,6 +30,7 @@ local Section = Tab:CreateSection("Auto Farm")
 local SettingsSection = SettingsTab:CreateSection("Configuration")
 
 local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
 local LP = Players.LocalPlayer
 
 local Config = {
@@ -37,9 +38,33 @@ local Config = {
     AutoExecute = false
 }
 
+local function Rejoin()
+    if #Players:GetPlayers() <= 1 then
+        LP:Kick("\nRejoining...")
+        task.wait(0.5)
+        TeleportService:Teleport(game.PlaceId, LP)
+    else
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP)
+    end
+end
+
+task.spawn(function()
+    while task.wait(1) do
+        if Config.AutoExecute then
+            if queue_on_teleport and not getgenv().jA5Xsv7C5EKYbHLAf1ps then
+                getgenv().jA5Xsv7C5EKYbHLAf1ps = true
+                queue_on_teleport([[loadstring(game:HttpGet("https://raw.githubusercontent.com/SylaHubAccount/Saved/refs/heads/main/ldgtmhd"))()]])
+            end
+        end
+    end
+end)
+
 task.spawn(function()
     while task.wait() do
         if Config.AutoFarm then
+            local stats = LP:FindFirstChild("leaderstats")
+            local coinValue = stats and stats:FindFirstChild("VerifiedCoins")
+            
             local ignored = workspace:FindFirstChild("Ignored")
             if ignored then
                 local coinsFolder = ignored:FindFirstChild("VerifiedCoins_Giver")
@@ -52,10 +77,21 @@ task.spawn(function()
                         local coinPart = coinsFolder:FindFirstChild("VerifiedCoin_TouchPart" .. i)
                         if coinPart then
                             coinFound = true
+                            
+                            local oldCoins = coinValue and coinValue.Value or 0
+                            
                             if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
                                 LP.Character.HumanoidRootPart.CFrame = coinPart.CFrame
                             end
-                            task.wait(0.3)
+                            
+                            task.wait(0.5)
+                            
+                            local newCoins = coinValue and coinValue.Value or 0
+                            
+                            if newCoins <= oldCoins and Config.AutoExecute then
+                                Rejoin()
+                                break
+                            end
                         end
                     end
 
@@ -79,17 +115,6 @@ task.spawn(function()
     end
 end)
 
-task.spawn(function()
-    while task.wait(1) do
-        if Config.AutoExecute then
-            if queue_on_teleport and not getgenv().jA5Xsv7C5EKYbHLAf1ps then
-                getgenv().jA5Xsv7C5EKYbHLAf1ps = true
-                queue_on_teleport([[loadstring(game:HttpGet("https://raw.githubusercontent.com/SylaHubAccount/Saved/refs/heads/main/ldgtmhd"))()]])
-            end
-        end
-    end
-end)
-
 local ToggleFarm = Tab:CreateToggle({
    Name = "Auto Farm Verified Coins",
    CurrentValue = false,
@@ -100,7 +125,7 @@ local ToggleFarm = Tab:CreateToggle({
 })
 
 local ToggleExec = SettingsTab:CreateToggle({
-   Name = "Auto Execute",
+   Name = "Auto Execute & Rejoin",
    CurrentValue = false,
    Flag = "AutoExecToggle",
    Callback = function(Value)
@@ -110,7 +135,7 @@ local ToggleExec = SettingsTab:CreateToggle({
 
 Rayfield:Notify({
    Title = "Sync Loaded",
-   Content = "Systems are ready.",
+   Content = "Auto-rejoin and Farm active.",
    Duration = 5,
    Image = 4483362458,
 })
