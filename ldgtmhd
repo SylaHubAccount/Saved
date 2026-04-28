@@ -3,7 +3,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
    Name = "Sync",
    Icon = 0,
-   LoadingTitle = "Sync Loading...",
+   LoadingTitle = "Sync",
    LoadingSubtitle = "by z6uq",
    Theme = "AmberGlow",
    DisableRayfieldPrompts = true,
@@ -16,8 +16,8 @@ local Window = Rayfield:CreateWindow({
    KeySystem = true,
    KeySettings = {
       Title = "Sync Key",
-      Subtitle = "Welcome to Sync",
-      Note = "The key is: Welcome to Sync",
+      Subtitle = "Welcome",
+      Note = "Key: Welcome to Sync",
       SaveKey = true,
       Key = {"Welcome to Sync"}
    }
@@ -26,30 +26,34 @@ local Window = Rayfield:CreateWindow({
 local Tab = Window:CreateTab("Main", 117764206554407)
 local SettingsTab = Window:CreateTab("Settings", "settings")
 
-local Section = Tab:CreateSection("Auto Farm")
-local SettingsSection = SettingsTab:CreateSection("Configuration")
-
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local LP = Players.LocalPlayer
+local StartTime = tick()
 
 local Config = {
     AutoFarm = false,
     AutoExecute = false
 }
 
-local function Rejoin()
-    if #Players:GetPlayers() <= 1 then
-        LP:Kick("\nRejoining...")
-        task.wait(0.1)
-        TeleportService:Teleport(game.PlaceId, LP)
-    else
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP)
-    end
+local function ServerHop(reason)
+    LP:Kick("\nServerhopping: " .. (reason or "Unknown"))
+    task.wait(1)
+    TeleportService:Teleport(game.PlaceId, LP)
 end
 
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(1) do
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LP and player.Character and player.Character:FindFirstChild("_K_Title", true) then
+                ServerHop("Moderator detected")
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.5) do
         if Config.AutoExecute then
             if queue_on_teleport and not getgenv().jA5Xsv7C5EKYbHLAf1ps then
                 getgenv().jA5Xsv7C5EKYbHLAf1ps = true
@@ -85,12 +89,12 @@ task.spawn(function()
                                 LP.Character.HumanoidRootPart.CFrame = coinPart.CFrame
                             end
                             
-                            task.wait(0.1) 
+                            task.wait(2) 
                             
                             local newCoins = coinValue and coinValue.Value or 0
                             
-                            if newCoins <= oldCoins and Config.AutoExecute then
-                                Rejoin()
+                            if newCoins <= oldCoins and Config.AutoExecute and (tick() - StartTime) > 15 then
+                                ServerHop("Farming limit reached")
                                 break
                             end
                         end
@@ -103,11 +107,11 @@ task.spawn(function()
                         if door1 and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
                             LP.Character.HumanoidRootPart.CFrame = door1.CFrame
                         end
-                        task.wait(0.2)
+                        task.wait(1)
                         if door2 and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
                             LP.Character.HumanoidRootPart.CFrame = door2.CFrame
                         end
-                        task.wait(0.2)
+                        task.wait(1)
                     end
                 end
             end
@@ -115,7 +119,7 @@ task.spawn(function()
     end
 end)
 
-local ToggleFarm = Tab:CreateToggle({
+Tab:CreateToggle({
    Name = "Auto Farm Verified Coins",
    CurrentValue = false,
    Flag = "AutoFarmToggle",
@@ -124,7 +128,7 @@ local ToggleFarm = Tab:CreateToggle({
    end,
 })
 
-local ToggleExec = SettingsTab:CreateToggle({
+SettingsTab:CreateToggle({
    Name = "Auto Execute & Rejoin",
    CurrentValue = false,
    Flag = "AutoExecToggle",
