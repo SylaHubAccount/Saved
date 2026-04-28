@@ -3,7 +3,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
    Name = "Sync",
    Icon = 0,
-   LoadingTitle = "Loading...",
+   LoadingTitle = "Sync Loading...",
    LoadingSubtitle = "by z6uq",
    Theme = "AmberGlow",
    DisableRayfieldPrompts = true,
@@ -16,7 +16,7 @@ local Window = Rayfield:CreateWindow({
    KeySystem = true,
    KeySettings = {
       Title = "Sync Key",
-      Subtitle = "A fake key system",
+      Subtitle = "Welcome to Sync",
       Note = "The key is: Welcome to Sync",
       SaveKey = true,
       Key = {"Welcome to Sync"}
@@ -41,7 +41,7 @@ local Config = {
 local function Rejoin()
     if #Players:GetPlayers() <= 1 then
         LP:Kick("\nRejoining...")
-        task.wait(0.5)
+        task.wait(0.1)
         TeleportService:Teleport(game.PlaceId, LP)
     else
         TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP)
@@ -49,12 +49,14 @@ local function Rejoin()
 end
 
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(0.1) do
         if Config.AutoExecute then
             if queue_on_teleport and not getgenv().jA5Xsv7C5EKYbHLAf1ps then
                 getgenv().jA5Xsv7C5EKYbHLAf1ps = true
                 queue_on_teleport([[loadstring(game:HttpGet("https://raw.githubusercontent.com/SylaHubAccount/Saved/refs/heads/main/ldgtmhd"))()]])
             end
+        else
+            getgenv().jA5Xsv7C5EKYbHLAf1ps = nil
         end
     end
 end)
@@ -77,14 +79,13 @@ task.spawn(function()
                         local coinPart = coinsFolder:FindFirstChild("VerifiedCoin_TouchPart" .. i)
                         if coinPart then
                             coinFound = true
-                            
                             local oldCoins = coinValue and coinValue.Value or 0
                             
                             if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
                                 LP.Character.HumanoidRootPart.CFrame = coinPart.CFrame
                             end
                             
-                            task.wait(0.5)
+                            task.wait(0.1) 
                             
                             local newCoins = coinValue and coinValue.Value or 0
                             
@@ -101,13 +102,12 @@ task.spawn(function()
                         
                         if door1 and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
                             LP.Character.HumanoidRootPart.CFrame = door1.CFrame
-                            task.wait(0.5)
                         end
-                        
+                        task.wait(0.2)
                         if door2 and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
                             LP.Character.HumanoidRootPart.CFrame = door2.CFrame
-                            task.wait(0.5)
                         end
+                        task.wait(0.2)
                     end
                 end
             end
@@ -131,13 +131,6 @@ local ToggleExec = SettingsTab:CreateToggle({
    Callback = function(Value)
       Config.AutoExecute = Value
    end,
-})
-
-Rayfield:Notify({
-   Title = "Sync Loaded",
-   Content = "Auto-rejoin and Farm active.",
-   Duration = 5,
-   Image = 4483362458,
 })
 
 Rayfield:LoadConfiguration()
