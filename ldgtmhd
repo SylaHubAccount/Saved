@@ -1,0 +1,98 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Sync",
+   Icon = 0,
+   LoadingTitle = "Loading...",
+   LoadingSubtitle = "by z6uq",
+   Theme = "AmberGlow",
+   DisableRayfieldPrompts = true,
+   DisableBuildWarnings = true,
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "SyncData",
+      FileName = "SyncConfig"
+   },
+   KeySystem = true,
+   KeySettings = {
+      Title = "Sync Key",
+      Subtitle = "A fake key system",
+      Note = "The key is: Welcome to Sync",
+      SaveKey = true,
+      Key = {"Welcome to Sync"}
+   }
+})
+
+local Tab = Window:CreateTab("Main", 117764206554407)
+local Section = Tab:CreateSection("Auto Farm")
+
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+
+local Config = {
+    AutoFarm = false
+}
+
+local function Teleport(cf)
+    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        LP.Character.HumanoidRootPart.CFrame = cf
+    end
+end
+
+task.spawn(function()
+    while task.wait() do
+        if Config.AutoFarm then
+            local ignored = workspace:FindFirstChild("Ignored")
+            if ignored then
+                local coinsFolder = ignored:FindFirstChild("VerifiedCoins_Giver")
+                local doorsFolder = ignored:FindFirstChild("TeleportDoors")
+                
+                if coinsFolder and doorsFolder then
+                    local coinFound = false
+                    
+                    for i = 1, 5 do
+                        local coinPart = coinsFolder:FindFirstChild("VerifiedCoin_TouchPart" .. i)
+                        if coinPart then
+                            coinFound = true
+                            Teleport(coinPart.CFrame)
+                            task.wait(0.3)
+                        end
+                    end
+
+                    if not coinFound then
+                        local door1 = doorsFolder:FindFirstChild("TeleportObby_1")
+                        local door2 = doorsFolder:FindFirstChild("TeleportObby_2")
+                        
+                        if door1 then
+                            Teleport(door1.CFrame)
+                            task.wait(0.5)
+                        end
+                        
+                        if door2 then
+                            Teleport(door2.CFrame)
+                            task.wait(0.5)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+local Toggle = Tab:CreateToggle({
+   Name = "Auto Farm Verified Coins",
+   CurrentValue = false,
+   Flag = "AutoFarmToggle",
+   Callback = function(Value)
+      Config.AutoFarm = Value
+   end,
+})
+
+Rayfield:Notify({
+   Title = "Sync Loaded",
+   Content = "Auto Farm system is ready.",
+   Duration = 5,
+   Image = 4483362458,
+})
+
+Rayfield:LoadConfiguration()
