@@ -26,10 +26,12 @@ local Window = Rayfield:CreateWindow({
 local Tab = Window:CreateTab("Main", 117764206554407)
 local SettingsTab = Window:CreateTab("Settings", "settings")
 
+local Section = Tab:CreateSection("Auto Farm")
+local SettingsSection = SettingsTab:CreateSection("Configuration")
+
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local LP = Players.LocalPlayer
-local StartTime = tick()
 
 local Config = {
     AutoFarm = false,
@@ -37,16 +39,19 @@ local Config = {
 }
 
 local function ServerHop(reason)
-    LP:Kick("\nServerhopping: " .. (reason or "Unknown"))
-    task.wait(1)
+    LP:Kick("\n" .. (reason or "Serverhopping..."))
+    task.wait(0.5)
     TeleportService:Teleport(game.PlaceId, LP)
 end
 
 task.spawn(function()
     while task.wait(1) do
         for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LP and player.Character and player.Character:FindFirstChild("_K_Title", true) then
-                ServerHop("Moderator detected")
+            if player ~= LP and player.Character then
+                if player.Character:FindFirstChild("_K_Title", true) then
+                    ServerHop("Serverhopping cause there's a moderator...")
+                    break
+                end
             end
         end
     end
@@ -68,7 +73,7 @@ end)
 task.spawn(function()
     while task.wait() do
         if Config.AutoFarm then
-            local stats = LP:FindFirstChild("leaderstats")
+            local stats = LP:WaitForChild("leaderstats", 5)
             local coinValue = stats and stats:FindFirstChild("VerifiedCoins")
             
             local ignored = workspace:FindFirstChild("Ignored")
@@ -80,7 +85,9 @@ task.spawn(function()
                     local coinFound = false
                     
                     for i = 1, 5 do
+                        if not Config.AutoFarm then break end
                         local coinPart = coinsFolder:FindFirstChild("VerifiedCoin_TouchPart" .. i)
+                        
                         if coinPart then
                             coinFound = true
                             local oldCoins = coinValue and coinValue.Value or 0
@@ -89,18 +96,18 @@ task.spawn(function()
                                 LP.Character.HumanoidRootPart.CFrame = coinPart.CFrame
                             end
                             
-                            task.wait(2) 
+                            task.wait(1.5)
                             
                             local newCoins = coinValue and coinValue.Value or 0
                             
-                            if newCoins <= oldCoins and Config.AutoExecute and (tick() - StartTime) > 15 then
-                                ServerHop("Farming limit reached")
-                                break
+                            if newCoins <= oldCoins and Config.AutoExecute then
+                                ServerHop("No more coins found, rejoining...")
+                                return
                             end
                         end
                     end
 
-                    if not coinFound then
+                    if not coinFound and Config.AutoFarm then
                         local door1 = doorsFolder:FindFirstChild("TeleportObby_1")
                         local door2 = doorsFolder:FindFirstChild("TeleportObby_2")
                         
@@ -119,7 +126,7 @@ task.spawn(function()
     end
 end)
 
-Tab:CreateToggle({
+local ToggleFarm = Tab:CreateToggle({
    Name = "Auto Farm Verified Coins",
    CurrentValue = false,
    Flag = "AutoFarmToggle",
@@ -128,7 +135,7 @@ Tab:CreateToggle({
    end,
 })
 
-SettingsTab:CreateToggle({
+local ToggleExec = SettingsTab:CreateToggle({
    Name = "Auto Execute & Rejoin",
    CurrentValue = false,
    Flag = "AutoExecToggle",
