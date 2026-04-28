@@ -24,20 +24,18 @@ local Window = Rayfield:CreateWindow({
 })
 
 local Tab = Window:CreateTab("Main", 117764206554407)
+local SettingsTab = Window:CreateTab("Settings", "settings")
+
 local Section = Tab:CreateSection("Auto Farm")
+local SettingsSection = SettingsTab:CreateSection("Configuration")
 
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 
 local Config = {
-    AutoFarm = false
+    AutoFarm = false,
+    AutoExecute = false
 }
-
-local function Teleport(cf)
-    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        LP.Character.HumanoidRootPart.CFrame = cf
-    end
-end
 
 task.spawn(function()
     while task.wait() do
@@ -54,7 +52,9 @@ task.spawn(function()
                         local coinPart = coinsFolder:FindFirstChild("VerifiedCoin_TouchPart" .. i)
                         if coinPart then
                             coinFound = true
-                            Teleport(coinPart.CFrame)
+                            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                                LP.Character.HumanoidRootPart.CFrame = coinPart.CFrame
+                            end
                             task.wait(0.3)
                         end
                     end
@@ -63,13 +63,13 @@ task.spawn(function()
                         local door1 = doorsFolder:FindFirstChild("TeleportObby_1")
                         local door2 = doorsFolder:FindFirstChild("TeleportObby_2")
                         
-                        if door1 then
-                            Teleport(door1.CFrame)
+                        if door1 and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                            LP.Character.HumanoidRootPart.CFrame = door1.CFrame
                             task.wait(0.5)
                         end
                         
-                        if door2 then
-                            Teleport(door2.CFrame)
+                        if door2 and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                            LP.Character.HumanoidRootPart.CFrame = door2.CFrame
                             task.wait(0.5)
                         end
                     end
@@ -79,7 +79,18 @@ task.spawn(function()
     end
 end)
 
-local Toggle = Tab:CreateToggle({
+task.spawn(function()
+    while task.wait(1) do
+        if Config.AutoExecute then
+            if queue_on_teleport and not getgenv().jA5Xsv7C5EKYbHLAf1ps then
+                getgenv().jA5Xsv7C5EKYbHLAf1ps = true
+                queue_on_teleport([[loadstring(game:HttpGet("https://raw.githubusercontent.com/SylaHubAccount/Saved/refs/heads/main/ldgtmhd"))()]])
+            end
+        end
+    end
+end)
+
+local ToggleFarm = Tab:CreateToggle({
    Name = "Auto Farm Verified Coins",
    CurrentValue = false,
    Flag = "AutoFarmToggle",
@@ -88,9 +99,18 @@ local Toggle = Tab:CreateToggle({
    end,
 })
 
+local ToggleExec = SettingsTab:CreateToggle({
+   Name = "Auto Execute",
+   CurrentValue = false,
+   Flag = "AutoExecToggle",
+   Callback = function(Value)
+      Config.AutoExecute = Value
+   end,
+})
+
 Rayfield:Notify({
    Title = "Sync Loaded",
-   Content = "Auto Farm system is ready.",
+   Content = "Systems are ready.",
    Duration = 5,
    Image = 4483362458,
 })
