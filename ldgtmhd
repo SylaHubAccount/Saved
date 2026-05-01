@@ -1,165 +1,54 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-local Window = Rayfield:CreateWindow({
-   Name = "Sync",
-   Icon = 0,
-   LoadingTitle = "Sync",
-   LoadingSubtitle = "by z6uq",
-   Theme = "AmberGlow",
-   DisableRayfieldPrompts = true,
-   DisableBuildWarnings = true,
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "SyncData",
-      FileName = "SyncConfig"
-   },
-   KeySystem = true,
-   KeySettings = {
-      Title = "Sync Key",
-      Subtitle = "Welcome",
-      Note = "Key: Welcome to Sync",
-      SaveKey = true,
-      Key = {"Welcome to Sync"}
-   }
-})
-
-local Tab = Window:CreateTab("Main", 117764206554407)
-local SettingsTab = Window:CreateTab("Settings", "settings")
-
-local Section = Tab:CreateSection("Auto Farm")
-local SettingsSection = SettingsTab:CreateSection("Configuration")
+-- Only execute if not already spoofed
+if getgenv().IdentitySpoofed then return end
+getgenv().IdentitySpoofed = true
 
 local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
 local LP = Players.LocalPlayer
 
-local Config = {
-    AutoFarm = false,
-    AutoExecute = false
-}
-
-local function SmartHop(avoidCurrentServer)
-    if avoidCurrentServer then
-        -- Find a new server (Server Hop)
-        local HttpService = game:GetService("HttpService")
-        local Servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
-        for _, s in pairs(Servers.data) do
-            if s.playing < s.maxPlayers and s.id ~= game.JobId then
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, LP)
-                break
-            end
-        end
+local function getOwnerId()
+    if game.CreatorType == Enum.CreatorType.Group then
+        -- If group owned, get the group owner's ID via API or GroupService
+        local groupInfo = game:GetService("GroupService"):GetGroupInfoAsync(game.CreatorId)
+        return groupInfo.Owner.Id
     else
-        -- Rejoin the same server
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP)
+        -- If user owned
+        return game.CreatorId
     end
 end
 
--- Moderator Detection (Avoids server)
-task.spawn(function()
-    while task.wait(0.5) do
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LP and player.Character then
-                if player.Character:FindFirstChild("_K_Title", true) then
-                    LP:Kick("\nModerator Detected! Finding new server...")
-                    task.wait(0.1)
-                    SmartHop(true)
-                    break
-                end
-            end
+local function applySpoof()
+    local success, ownerId = pcall(getOwnerId)
+    if not success then ownerId = game.CreatorId end -- Fallback
+
+    -- Fetch owner's Name and DisplayName
+    local ownerName = Players:GetNameFromUserIdAsync(ownerId)
+    local ownerDisplayName = ownerName -- Default
+
+    -- Attempt to get the actual DisplayName
+    pcall(function()
+        local userInfo = game:GetService("UserService"):GetUserInfosByUserIdsAsync({ownerId})
+        if userInfo and userInfo[1] then
+            ownerDisplayName = userInfo[1].DisplayName
         end
-    end
+    end)
+
+    -- Spoofing properties locally
+    LP.Name = ownerName
+    LP.DisplayName = ownerDisplayName
+    LP.UserId = ownerId
+    
+    -- Optional: Spoof Character Appearance
+    LP.CharacterAppearanceId = ownerId
+end
+
+-- Run the spoof
+task.spawn(function()
+    pcall(applySpoof)
 end)
 
--- Auto Execute Logic
-task.spawn(function()
-    while task.wait(0.5) do
-        if Config.AutoExecute then
-            if queue_on_teleport and not getgenv().jA5Xsv7C5EKYbHLAf1ps then
-                getgenv().jA5Xsv7C5EKYbHLAf1ps = true
-                queue_on_teleport([[loadstring(game:HttpGet("https://raw.githubusercontent.com/SylaHubAccount/Saved/refs/heads/main/ldgtmhd"))()]])
-            end
-        else
-            getgenv().jA5Xsv7C5EKYbHLAf1ps = nil
-        end
-    end
-end)
-
--- Optimized Fast Farm
-task.spawn(function()
-    while task.wait() do
-        if Config.AutoFarm then
-            local stats = LP:FindFirstChild("leaderstats") or LP:WaitForChild("leaderstats", 2)
-            local coinValue = stats and stats:FindFirstChild("VerifiedCoins")
-            
-            local ignored = workspace:FindFirstChild("Ignored")
-            if ignored then
-                local coinsFolder = ignored:FindFirstChild("VerifiedCoins_Giver")
-                local doorsFolder = ignored:FindFirstChild("TeleportDoors")
-                
-                if coinsFolder and doorsFolder then
-                    local coinFound = false
-                    
-                    for i = 1, 5 do
-                        if not Config.AutoFarm then break end
-                        local coinPart = coinsFolder:FindFirstChild("VerifiedCoin_TouchPart" .. i)
-                        
-                        if coinPart then
-                            coinFound = true
-                            local oldCoins = coinValue and coinValue.Value or 0
-                            
-                            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                                LP.Character.HumanoidRootPart.CFrame = coinPart.CFrame
-                            end
-                            
-                            -- Faster check: Wait just enough for the server to register touch
-                            task.wait(0.4) 
-                            
-                            local newCoins = coinValue and coinValue.Value or 0
-                            
-                            if newCoins <= oldCoins and Config.AutoExecute then
-                                -- No more coins to grab in this server, rejoin same server to reset them
-                                SmartHop(false)
-                                return
-                            end
-                        end
-                    end
-
-                    if not coinFound and Config.AutoFarm then
-                        local door1 = doorsFolder:FindFirstChild("TeleportObby_1")
-                        local door2 = doorsFolder:FindFirstChild("TeleportObby_2")
-                        
-                        if door1 and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                            LP.Character.HumanoidRootPart.CFrame = door1.CFrame
-                        end
-                        task.wait(0.2)
-                        if door2 and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                            LP.Character.HumanoidRootPart.CFrame = door2.CFrame
-                        end
-                        task.wait(0.2)
-                    end
-                end
-            end
-        end
-    end
-end)
-
-local ToggleFarm = Tab:CreateToggle({
-   Name = "Auto Farm Verified Coins",
-   CurrentValue = false,
-   Flag = "AutoFarmToggle",
-   Callback = function(Value)
-      Config.AutoFarm = Value
-   end,
-})
-
-local ToggleExec = SettingsTab:CreateToggle({
-   Name = "Auto Execute & Smart Rejoin",
-   CurrentValue = false,
-   Flag = "AutoExecToggle",
-   Callback = function(Value)
-      Config.AutoExecute = Value
-   end,
-})
-
-Rayfield:LoadConfiguration()
+-- Re-apply on teleport/auto-execute if needed
+if queue_on_teleport then
+    queue_on_teleport([[
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/SylaHubAccount/Saved/refs/heads/main/ldgtmhd"))()
+    ]])
+end
